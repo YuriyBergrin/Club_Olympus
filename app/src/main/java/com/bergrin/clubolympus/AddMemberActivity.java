@@ -61,6 +61,7 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
             setTitle("Add a member");
         } else {
             setTitle("Edit the member");
+            getSupportLoaderManager().initLoader(EDIT_MEMBER_LOADER, null, this);
         }
 
         firstNameEditText = findViewById(R.id.firstNameEditText);
@@ -94,8 +95,6 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
                 gender = 0;
             }
         });
-
-        getSupportLoaderManager().initLoader(EDIT_MEMBER_LOADER, null, this);
     }
 
     @Override
@@ -108,7 +107,7 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.save_member:
-                insertMember();
+                saveMember();
                 return true;
             case R.id.delete_member:
                 return true;
@@ -119,10 +118,14 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
         return super.onOptionsItemSelected(item);
     }
 
-    private void insertMember() {
+    private void saveMember() {
         String firstName = firstNameEditText.getText().toString().trim();
         String lastName = lastNameEditText.getText().toString().trim();
         String sport = sportEditText.getText().toString().trim();
+
+        if (TextUtils.isEmpty(firstName)) {
+            Toast.makeText(this, "Input the first name", Toast.LENGTH_LONG).show();
+        }
 
         ContentValues contentValues = new ContentValues();
         contentValues.put(COLUMN_FIRST_NAME, firstName);
@@ -130,16 +133,28 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
         contentValues.put(COLUMN_SPORT, sport);
         contentValues.put(COLUMN_GENDER, gender);
 
-        ContentResolver contentResolver = getContentResolver();
-        Uri uri = contentResolver.insert(CONTENT_URI, contentValues);
-        if (uri == null) {
-            Toast.makeText(this,
-                    "Insertion of data in the table failed",
-                    Toast.LENGTH_LONG).show();
+        if (currentMemberUri == null) {
+            ContentResolver contentResolver = getContentResolver();
+            Uri uri = contentResolver.insert(CONTENT_URI, contentValues);
+            if (uri == null) {
+                Toast.makeText(this,
+                        "Insertion of data in the table failed",
+                        Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this,
+                        "Data saved", Toast.LENGTH_LONG).show();
+            }
         } else {
-            Toast.makeText(this,
-                    "Data saved", Toast.LENGTH_LONG).show();
+            int rowsChanged = getContentResolver().update(currentMemberUri, contentValues, null, null);
+            if (rowsChanged == 0) {
+                Toast.makeText(this,
+                        "Saving data in the table failed", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this,
+                        "Member updated", Toast.LENGTH_LONG).show();
+            }
         }
+
     }
 
     @NonNull
