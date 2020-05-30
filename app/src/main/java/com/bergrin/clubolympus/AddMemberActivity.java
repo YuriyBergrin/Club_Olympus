@@ -178,7 +178,7 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
                         "Member updated", Toast.LENGTH_LONG).show();
             }
         }
-
+        finish();
     }
 
     @NonNull
