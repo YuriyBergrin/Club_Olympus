@@ -2,6 +2,7 @@ package com.bergrin.clubolympus;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NavUtils;
 import androidx.loader.app.LoaderManager;
@@ -10,6 +11,7 @@ import androidx.loader.content.Loader;
 
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -59,6 +61,7 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
         currentMemberUri = intent.getData();
         if (currentMemberUri == null) {
             setTitle("Add a member");
+            invalidateOptionsMenu();
         } else {
             setTitle("Edit the member");
             getSupportLoaderManager().initLoader(EDIT_MEMBER_LOADER, null, this);
@@ -98,6 +101,16 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        if (currentMemberUri == null) {
+            MenuItem menuItem = menu.findItem(R.id.delete_member);
+            menuItem.setVisible(false);
+        }
+        return true;
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.edit_member_menu, menu);
         return true;
@@ -110,6 +123,7 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
                 saveMember();
                 return true;
             case R.id.delete_member:
+                showDeleteMemberDialog();
                 return true;
             case android.R.id.home:
                 NavUtils.navigateUpFromSameTask(this);
@@ -125,6 +139,16 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
 
         if (TextUtils.isEmpty(firstName)) {
             Toast.makeText(this, "Input the first name", Toast.LENGTH_LONG).show();
+            return;
+        } else if (TextUtils.isEmpty(lastName)) {
+            Toast.makeText(this, "Input the last name", Toast.LENGTH_LONG).show();
+            return;
+        } else if (TextUtils.isEmpty(sport)) {
+            Toast.makeText(this, "Input the sport name", Toast.LENGTH_LONG).show();
+            return;
+        } else if (gender == GENDER_UNKNOWN) {
+            Toast.makeText(this, "Choose the gender", Toast.LENGTH_LONG).show();
+            return;
         }
 
         ContentValues contentValues = new ContentValues();
@@ -199,5 +223,41 @@ public class AddMemberActivity extends AppCompatActivity implements LoaderManage
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
 
+    }
+
+    private void showDeleteMemberDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Do you want delete the member?");
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                deleteMember();
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (dialog != null) {
+                    dialog.dismiss();
+                }
+            }
+        });
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+    }
+
+    private void deleteMember() {
+        if (currentMemberUri != null) {
+            int rowsDeleted = getContentResolver().delete(currentMemberUri, null, null);
+            if (rowsDeleted == 0) {
+                Toast.makeText(this,
+                        "Deleting data from the table failed", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this,
+                        "Member is deleted", Toast.LENGTH_LONG).show();
+            }
+            finish();
+        }
     }
 }
